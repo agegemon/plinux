@@ -74,9 +74,10 @@ Some methods have "human commands" and aliases:
 
 ## Changelog
 
-##### 1.1.9 (08.04.2021)
+##### 1.1.9 (12.05.2021)
 
-- get_file_permissions added sudo param
+- create_file, get_file_size, grep_line_in_file, change_line_in_file, delete_line_from_file, get_last_file, remove,
+  extract_files, copy_file, get_md5, create_directory, list_dir to accept "sudo" param
 
 ##### 1.1.8 (13.02.2021)
 

@@ -191,13 +191,13 @@ class Plinux:
         finally:
             client.close()
 
+    # noinspection PyTypeChecker
     def run_cmd_session(
             self,
             cmds: tuple = None,
             buffer_size: int = 4096,
     ) -> ResponseParser:
-        """
-        Send command using session. Returns entity name if noe command provided.
+        """Send command using session. Returns entity name if noe command provided.
 
         :param cmds: List of commands to execute
         :param buffer_size: Bytes size to receive. Default 4096.
@@ -374,8 +374,8 @@ class Plinux:
             print(json.dumps(jsoned, indent=4), sep='')
         return jsoned
 
-    def create_file(self, path: str):
-        return self.run_cmd(f'touch {path}', sudo=True)
+    def create_file(self, path: str, sudo: bool = True):
+        return self.run_cmd(f'touch {path}', sudo=sudo)
 
     def get_file_permissions(self, path: str, human: bool = False, sudo: bool = False):
         """Display file or file system status.
@@ -389,18 +389,20 @@ class Plinux:
         cmd = f'stat -c %A {path}' if human else f'stat -c %a {path}'
         return self.run_cmd(cmd, sudo=sudo)
 
-    def get_file_size(self, path: str):
+    def get_file_size(self, path: str, sudo: bool = False):
         """Get file size
 
+        :param sudo:
         :param path: File path
         :return: size in bytes
         """
 
-        return self.run_cmd(f'stat -c "%s" {path}')
+        return self.run_cmd(f'stat -c "%s" {path}', sudo=sudo)
 
-    def grep_line_in_file(self, path: str, string: str, directory: bool = False):
+    def grep_line_in_file(self, path: str, string: str, directory: bool = False, sudo: bool = True):
         """Grep line in file or directory
 
+        :param sudo:
         :param path: File/directory path
         :param string: string pattern to grep
         :param directory: If True - grep in directory with files
@@ -408,26 +410,28 @@ class Plinux:
         """
 
         if directory:
-            return self.run_cmd(f'grep -rn "{string}" {path}')
-        return self.run_cmd(f'grep -n "{string}" {path}')
+            return self.run_cmd(f'grep -rn "{string}" {path}', sudo=sudo)
+        return self.run_cmd(f'grep -n "{string}" {path}', sudo=sudo)
 
-    def change_line_in_file(self, path: str, old: str, new: str):
+    def change_line_in_file(self, path: str, old: str, new: str, sudo: bool = True):
         """Replace line and save file.
 
+        :param sudo:
         :param path: File path
         :param old: String to replace
         :param new: New string
         :return:
         """
 
-        return self.run_cmd(f'sed -i "s!{old}!{new}!" {path}', sudo=True)
+        return self.run_cmd(f'sed -i "s!{old}!{new}!" {path}', sudo=sudo)
 
-    def delete_line_from_file(self, path: str, string: str):
-        return self.run_cmd(f"sed -i '/{string}/d' {path}", sudo=True)
+    def delete_line_from_file(self, path: str, string: str, sudo: bool = True):
+        return self.run_cmd(f"sed -i '/{string}/d' {path}", sudo=sudo)
 
-    def get_last_file(self, directory: str = '', name: str = ''):
+    def get_last_file(self, directory: str = '', name: str = '', sudo: bool = True):
         """Get last modified file in a directory
 
+        :param sudo:
         :param name: Filename to grep
         :param directory: Directory path to precess. Home by default
         :return:
@@ -435,9 +439,9 @@ class Plinux:
 
         directory_ = directory or f'/home/{self.username}'
         cmd = f'ls {directory_} -Art| grep {name} | tail -n 1' if name else f'ls {directory} -Art | tail -n 1'
-        return self.run_cmd(cmd)
+        return self.run_cmd(cmd, sudo=sudo)
 
-    def remove(self, path: str):
+    def remove(self, path: str, sudo: bool = True):
         """Remove file(s) and directories
 
         Usage:\n
@@ -445,14 +449,16 @@ class Plinux:
         path=/opt/1/* remove all file in the directory\n
         path=/opt/1/file.txt remove specified file in the directory\n
 
+        :param sudo:
         :param path: Path to a file or directory.
         """
 
-        return self.run_cmd(f'for file in {path}; do rm -rf "$file"; done', sudo=True)
+        return self.run_cmd(f'for file in {path}; do rm -rf "$file"; done', sudo=sudo)
 
-    def extract_files(self, src: str, dst: str, mode: str = 'tar', quite: bool = True):
+    def extract_files(self, src: str, dst: str, mode: str = 'tar', quite: bool = True, sudo: bool = False):
         """Extract file to specified directory
 
+        :param sudo:
         :param src: Full path to archive (with extension)
         :param dst:
         :param mode: "tar", "zip"
@@ -465,27 +471,29 @@ class Plinux:
 
         cmd = tar_cmd if mode == 'tar' else unzip_cmd
 
-        return self.run_cmd(cmd)
+        return self.run_cmd(cmd, sudo=sudo)
 
-    def copy_file(self, src: str, dst: str):
+    def copy_file(self, src: str, dst: str, sudo: bool = True):
         """Copy file to another location
 
+        :param sudo:
         :param src: Source full path
         :param dst: Destination
         :return:
         """
 
-        return self.run_cmd(f'cp {src} {dst}', sudo=True)
+        return self.run_cmd(f'cp {src} {dst}', sudo=sudo)
 
-    def get_md5(self, path: str, raw: bool = False):
+    def get_md5(self, path: str, raw: bool = False, sudo: bool = True):
         """
         Get file md5
 
+        :param sudo:
         :param path: File path
-        :param raw: Return md5 sum only (not Rseponse object)
+        :param raw: Return md5 sum only (not Response object)
         """
 
-        result = self.run_cmd(f'md5sum {path}').stdout
+        result = self.run_cmd(f'md5sum {path}', sudo=sudo).stdout
         if raw:
             return result.split(path)[0].strip()
         return result
@@ -501,19 +509,20 @@ class Plinux:
         return self.run_cmd('shutdown -h now', sudo=True)
 
     #  ----------- Directory management -----------
-    def create_directory(self, path: str):
-        return self.run_cmd(f'mkdir {path}', sudo=True)
+    def create_directory(self, path: str, sudo: bool = True):
+        return self.run_cmd(f'mkdir {path}', sudo=sudo)
 
-    def list_dir(self, path: str, params=None):
+    def list_dir(self, path: str, params=None, sudo: bool = False):
         """List directory
 
         :param path: Directory path
         :param params: Additional params. For example: "la"
+        :param sudo:
         :return:
         """
 
         cmd = f'ls {path} -{params}' if params else f'ls {path}'
-        return self.run_cmd(cmd)
+        return self.run_cmd(cmd, sudo=sudo)
 
     def count_files(self, path: str):
         return self.run_cmd(f'ls {path} | wc -l')
